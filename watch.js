@@ -2,6 +2,11 @@ const { execSync } = require('child_process');
 const { readdirSync, statSync } = require('fs');
 const { join } = require('path');
 
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
+
+const REFRESH_RATE = 1 * MINUTE;
+
 // Console window colors.  Prepend to console.log message to use.
 const COLORS = {
     Reset: "\x1b[0m",
@@ -62,22 +67,54 @@ function dive (directory)
 }
 
 /**
- * Handles checking the git status and printing all of the statuses to the screen
- * On branch (.*)(\n.*behind '(.*)' by (\d+) commits)?
+ * Handles checking the git statuses
+ * @param {boolean} fetch if true fetches remote for changes, false uses local status
+ * @return {Array<object>} The statuses of each git repo in the project
  */
-function handleStatuses () {
-    console.clear();
+function handleStatuses (fetch)
+{
+    var statuses = [];
     gitFolders.forEach(folder => {
-        var status = execSync(`cd ${folder} && git status ${folder}`).toString();
+        if (fetch) {
+            process.stdout.write(`Looking for changes...${folder}                 \r`);
+            execSync(`cd ${folder} && git fetch`);
+        }
+
+        var status = execSync(`cd ${folder} && git status`).toString();
         var upToDate = status.indexOf('behind') === -1;
         var attr = status.match(/On branch (.*)(\n.*behind '(.*)' by (\d+) commits)?/);
     
-        var msg = `-> ${folder} : ${COLORS.FgYellow}${attr[1]}${COLORS.Reset} : ${upToDate ? `${COLORS.FgGreen}OK` : `${COLORS.FgRed}${attr[4]} commits behind!`}${COLORS.Reset}`;
-        
-        console.log(msg);
+        statuses.push({
+            repo: folder,
+            branch: attr[1],
+            origin: attr[3],
+            commitsBehind: attr[4],
+            upToDate: upToDate
+        });
     });
+
+    return statuses;
 }
 
+/**
+ * Handles rendering the git statuses to the screen
+ */
+function render (fetch = true)
+{
+    var statuses = handleStatuses(fetch);
+    console.clear();
+    console.log(`----------------------------------`);
+    console.log(`-          Git Tracking          -`);
+    console.log(`----------------------------------`);
+    statuses.forEach(status => {
+        var msg = `-> ${status.repo} : ${COLORS.FgYellow}${status.branch}${COLORS.Reset} : ${status.upToDate ? `${COLORS.FgGreen}OK` : `${COLORS.FgRed}${status.commitsBehind} commits behind!`}${COLORS.Reset}`;
+        console.log(msg);
+    });
+    console.log(`----------------------------------`);
+}
+
+
 dive('./');
-handleStatuses();
-setInterval(handleStatuses, 1000 * 60);
+render(false); // Quickly show current status
+render(true); // Start fetching for updates
+setInterval(render, REFRESH_RATE); // Start regular interval
