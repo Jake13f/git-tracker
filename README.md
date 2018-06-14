@@ -7,10 +7,15 @@ Fetches the status of each git repo in cwd every 60 seconds for changes by defau
 ```
 ~/Project (development)
 $ node watch
+----------------------------------
+-          Git Tracking          -
+----------------------------------
 -> ./ : development : 8 commits behind!
 -> git-proj1 : feat/live-update : OK
 -> git-proj2 : development : OK
 -> git-proj3 : development : OK
+----------------------------------
+Looking for changes...git-proj1
 ```
 
 ## Usage
