@@ -82,7 +82,7 @@ function handleStatuses (fetch)
 
         var status = execSync(`cd ${folder} && git status`).toString();
         var upToDate = status.indexOf('behind') === -1;
-        var attr = status.match(/On branch (.*)(\n.*behind '(.*)' by (\d+) commits)?/);
+        var attr = status.match(/On branch (.*)(\n.*behind '(.*)' by (\d+) commit)?/);
     
         statuses.push({
             repo: folder,
