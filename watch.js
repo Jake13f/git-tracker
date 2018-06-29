@@ -82,13 +82,14 @@ function handleStatuses (fetch)
 
         var status = execSync(`cd ${folder} && git status`).toString();
         var upToDate = status.indexOf('behind') === -1;
-        var attr = status.match(/On branch (.*)(\n.*behind '(.*)' by (\d+) commit)?/);
-    
+        var attr = status.match(/On branch (.*)(\n.*behind '(.*)' by (\d+) commit.*)?\n(.*\n)?(Changes not staged for commit)?/);
+
         statuses.push({
             repo: folder,
             branch: attr[1],
             origin: attr[3],
             commitsBehind: attr[4],
+            unstaged: attr[6] ? true : false,
             upToDate: upToDate
         });
     });
@@ -107,7 +108,11 @@ function render (fetch = true)
     console.log(`-          Git Tracking          -`);
     console.log(`----------------------------------`);
     statuses.forEach(status => {
-        var msg = `-> ${status.repo} : ${COLORS.FgYellow}${status.branch}${COLORS.Reset} : ${status.upToDate ? `${COLORS.FgGreen}OK` : `${COLORS.FgRed}${status.commitsBehind} commits behind!`}${COLORS.Reset}`;
+        var msg = 
+            `-> ${status.repo}`+
+            ` : ${status.branch != 'development' ? `${COLORS.BgRed}`:``}${COLORS.FgYellow}${status.branch}${COLORS.Reset}`+
+            ` : ${status.upToDate ? `${COLORS.FgGreen}OK` : `${COLORS.FgRed}${status.commitsBehind} commits behind!`}${COLORS.Reset}`+
+            `${status.unstaged ? ` : ${COLORS.FgMagenta}Unstaged changes!${COLORS.Reset}`:``}`;
         console.log(msg);
     });
     console.log(`----------------------------------`);
